@@ -50,7 +50,6 @@ class RealEstateEntryController extends Controller
 
     public function search(Request $request)
     {
-        
         // Define the validation rules
         $rules = [
             'type' => 'nullable|in:apartment,house',
@@ -62,34 +61,38 @@ class RealEstateEntryController extends Controller
         ];
 
         // Validate the request
-        $validatedData = $request->validate($rules);
-        
+        $validator = Validator::make($request->all(), $rules);
+
+        // If the validation fails, return a response with the errors
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
 
         // Build the query to search for entries
         $query = RealEstateEntry::query();
 
-        if (isset($validatedData['type'])) {
-            $query->where('real_estate_entries_type', $validatedData['type']);
+        if ($request->has('type')) {
+            $query->where('real_estate_entries_type', $request->get('type'));
         }
 
-        if (isset($validatedData['address'])) {
-            $query->where('real_estate_entries_address', 'like', '%'.$validatedData['address'].'%');
+        if ($request->has('address')) {
+            $query->where('real_estate_entries_address', 'like', '%'.$request->get('address').'%');
         }
 
-        if (isset($validatedData['size'])) {
-            $query->where('real_estate_entries_size', '>=', $validatedData['size']);
+        if ($request->has('size')) {
+            $query->where('real_estate_entries_size', '>=', $request->get('size'));
         }
 
-        if (isset($validatedData['number_of_bedrooms'])) {
-            $query->where('real_estate_entries_number_of_bedrooms', $validatedData['number_of_bedrooms']);
+        if ($request->has('number_of_bedrooms')) {
+            $query->where('real_estate_entries_number_of_bedrooms', $request->get('number_of_bedrooms'));
         }
 
-        if (isset($validatedData['min_price'])) {
-            $query->where('real_estate_entries_price', '>=', $validatedData['min_price']);
+        if ($request->has('min_price')) {
+            $query->where('real_estate_entries_price', '>=', $request->get('min_price'));
         }
 
-        if (isset($validatedData['max_price'])) {
-            $query->where('real_estate_entries_price', '<=', $validatedData['max_price']);
+        if ($request->has('max_price')) {
+            $query->where('real_estate_entries_price', '<=', $request->get('max_price'));
         }
 
         // Get the results
@@ -99,8 +102,25 @@ class RealEstateEntryController extends Controller
         return response()->json($results);
     }
 
+
     public function radiusSearch(Request $request): JsonResponse
     {
+
+        // Define the validation rules
+        $rules = [
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'radius' => 'required|numeric|min:1',
+        ];
+
+        // Validate the request
+        $validator = Validator::make($request->all(), $rules);
+
+        // If the validation fails, return a response with the errors
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
         // Get the search parameters from the request
         $latitude = $request->input('latitude');
         $longitude = $request->input('longitude');
@@ -113,4 +133,5 @@ class RealEstateEntryController extends Controller
         // Return the results as a JSON response
         return response()->json($entries);
     }
+
 }
